@@ -1,0 +1,1 @@
+{"name":"rescheduler","type":"module","scripts":{"start":"node src/index.js"},"dependencies":{"kafkajs":"^2.2.4","mongodb":"^6.8.0","express":"^4.21.1"}}

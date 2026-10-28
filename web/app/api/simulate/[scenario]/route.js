@@ -1,0 +1,1 @@
+import {NextResponse} from 'next/server';export async function POST(req,{params}){const {scenario}=await params;await fetch(`http://simulator:3010/scenario/${scenario}`,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});return NextResponse.redirect(new URL('/',req.url),303)}

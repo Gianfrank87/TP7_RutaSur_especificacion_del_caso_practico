@@ -1,0 +1,9 @@
+import {kafka,parse} from '../../../shared/kafka.js'; import {TOPICS,ESTADOS} from '../../../shared/events.js'; import {db,once} from '../../../shared/mongo.js';
+const d=await db(); await d.collection('eventos_procesados').createIndex({consumer:1,eventId:1},{unique:true});await d.collection('envios').createIndex({shipmentId:1},{unique:true});
+const k=kafka('projector'), c=k.consumer({groupId:'proyector'}), p=k.producer();await c.connect();await p.connect();for(const t of [TOPICS.estados,TOPICS.reprogramaciones,TOPICS.alertas,TOPICS.notificaciones])await c.subscribe({topic:t,fromBeginning:true});
+await c.run({eachMessage:async({topic,message})=>{let e;try{e=parse(message);if(!e.eventId||!e.shipmentId||!e.tipo)throw new Error('evento inválido');if(!(await once(d.collection('eventos_procesados'),'proyector',e.eventId)))return;
+ if(topic===TOPICS.estados){if(!ESTADOS.includes(e.tipo))throw new Error('estado inválido');const cur=await d.collection('envios').findOne({shipmentId:e.shipmentId});if(cur&&e.secuencia<=cur.ultimaSecuencia)return;await d.collection('envios').updateOne({shipmentId:e.shipmentId},{$set:{shipmentId:e.shipmentId,estado:e.tipo,ultimaSecuencia:e.secuencia,hubId:e.hubId,zonaId:e.zonaId,repartidorId:e.repartidorId,actualizadoEn:new Date()},$push:{historial:{tipo:e.tipo,ocurridoEn:e.ocurridoEn,motivo:e.motivo}}},{upsert:true});}
+ if(topic===TOPICS.reprogramaciones)await d.collection('envios').updateOne({shipmentId:e.shipmentId},{$set:{reprogramacion:e}});
+ if(topic===TOPICS.alertas)await d.collection('alertas').updateOne({shipmentId:e.shipmentId,regla:e.regla},{$set:e},{upsert:true});
+ if(topic===TOPICS.notificaciones)await d.collection('notificaciones').insertOne(e);
+ }catch(err){await p.send({topic:TOPICS.dlq,messages:[{key:e?.shipmentId||'sin-id',value:message.value,headers:{motivo:err.message}}]});}}});

@@ -1,0 +1,1 @@
+import './style.css'; export const metadata={title:'RutaSur'};export default function Layout({children}){return <html><body><header><b>RutaSur</b><nav><a href="/">Torre</a><a href="/analytics">Analítica</a></nav></header><main>{children}</main></body></html>}

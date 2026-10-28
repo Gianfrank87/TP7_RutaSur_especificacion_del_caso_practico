@@ -1,0 +1,6 @@
+{
+  "name":"rutasur-eventos",
+  "private":true,
+  "workspaces":["services/*","web"],
+  "scripts":{"start":"docker compose up --build","down":"docker compose down -v"}
+}
